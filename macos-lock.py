@@ -64,7 +64,7 @@ class InputLocker:
 	def run(self):
 		"""Startet die Event-Überwachung"""
 
-		# Event-Maske für alle relevanten Events
+		# Event-Maske für alle relevanten Events (Tastatur, Maus und Touchpad)
 		event_mask = (
 				(1 << Quartz.kCGEventKeyDown) |
 				(1 << Quartz.kCGEventKeyUp) |
@@ -77,7 +77,10 @@ class InputLocker:
 				(1 << Quartz.kCGEventRightMouseDragged) |
 				(1 << Quartz.kCGEventScrollWheel) |
 				(1 << Quartz.kCGEventOtherMouseDown) |
-				(1 << Quartz.kCGEventOtherMouseUp)
+				(1 << Quartz.kCGEventOtherMouseUp) |
+				(1 << Quartz.kCGEventOtherMouseDragged) |
+				(1 << Quartz.kCGEventTabletPointer) |
+				(1 << Quartz.kCGEventTabletProximity)
 		)
 
 		# Event Tap erstellen
