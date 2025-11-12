@@ -6,6 +6,9 @@ on:
       - 'v*'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: macos-latest
@@ -32,20 +35,12 @@ jobs:
         run: |
           tar -czf macOS-Lock.app.tar.gz "macOS Lock.app"
 
-      - name: Get version from tag
-        id: get_version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
-
       - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ github.ref }}
-          release_name: macOS Lock ${{ steps.get_version.outputs.VERSION }}
+          files: macOS-Lock.app.tar.gz
           body: |
-            ## macOS Lock ${{ steps.get_version.outputs.VERSION }}
+            ## macOS Lock ${{ github.ref_name }}
 
             ### Installation
             1. Download `macOS-Lock.app.tar.gz`
@@ -66,13 +61,3 @@ jobs:
             Built for Apple Silicon with universal binary support.
           draft: false
           prerelease: false
-
-      - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./macOS-Lock.app.tar.gz
-          asset_name: macOS-Lock.app.tar.gz
-          asset_content_type: application/gzip
