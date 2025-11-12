@@ -2,6 +2,8 @@
 
 A security utility for macOS that temporarily locks keyboard and mouse input to prevent unauthorized access or accidental input.
 
+![macOS Lock Screenshot](Screenshot.png)
+
 ## Features
 
 - 🔒 **Input Locking**: Blocks all keyboard and mouse input when activated
@@ -12,13 +14,24 @@ A security utility for macOS that temporarily locks keyboard and mouse input to 
 
 ## Installation
 
-### Prerequisites
+### Option 1: Download Pre-built App (Recommended)
+
+Download the latest release for Apple Silicon (M1/M2/M3) from the [Releases page](https://github.com/pepperonas/macOS-lock/releases).
+
+1. Download `macOS-Lock.app.tar.gz`
+2. Extract the archive
+3. Move `macOS-Lock.app` to your Applications folder
+4. Right-click and select "Open" the first time to bypass Gatekeeper
+
+### Option 2: Build from Source
+
+#### Prerequisites
 
 - macOS 10.14 or later
 - Python 3.8+
 - Accessibility permissions for Terminal/Python
 
-### Quick Start
+#### Quick Start
 
 1. Clone the repository:
 ```bash

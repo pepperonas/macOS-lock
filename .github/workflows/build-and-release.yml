@@ -1,0 +1,78 @@
+name: Build and Release macOS App
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip3 install --user pyobjc-core pyobjc-framework-Quartz
+
+      - name: Create app bundle
+        run: |
+          chmod +x create_app.sh
+          ./create_app.sh
+
+      - name: Create archive
+        run: |
+          tar -czf macOS-Lock.app.tar.gz "macOS Lock.app"
+
+      - name: Get version from tag
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: macOS Lock ${{ steps.get_version.outputs.VERSION }}
+          body: |
+            ## macOS Lock ${{ steps.get_version.outputs.VERSION }}
+
+            ### Installation
+            1. Download `macOS-Lock.app.tar.gz`
+            2. Extract the archive: `tar -xzf macOS-Lock.app.tar.gz`
+            3. Move `macOS Lock.app` to your Applications folder
+            4. Right-click and select "Open" the first time to bypass Gatekeeper
+            5. Grant Accessibility permissions when prompted
+
+            ### Requirements
+            - macOS 10.14 or later
+            - Apple Silicon (M1/M2/M3) or Intel
+
+            ### Features
+            - Lock keyboard and mouse input
+            - Unlock with X+C key combination
+            - Lightweight and secure
+
+            Built for Apple Silicon with universal binary support.
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./macOS-Lock.app.tar.gz
+          asset_name: macOS-Lock.app.tar.gz
+          asset_content_type: application/gzip

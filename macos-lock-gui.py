@@ -143,12 +143,16 @@ class LockApp:
         self.locker = InputLocker(app_callback=self.close_app)
         self.is_locked = False
         self.should_close = False
-        
+        self.minimized_by_lock = False
+
         # UI erstellen
         self.setup_ui()
-        
+
         # Window Events
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
+
+        # Focus Event für Dock-Icon-Klicks
+        self.root.bind('<FocusIn>', self.on_focus_in)
         
     def setup_ui(self):
         """Erstellt die Benutzeroberfläche"""
@@ -218,12 +222,14 @@ class LockApp:
                     fg='#000000',
                     activeforeground='#000000'
                 )
-                # Minimiere Fenster
+                # Minimiere Fenster und merke, dass es wegen Lock minimiert wurde
+                self.minimized_by_lock = True
                 self.root.iconify()
         else:
             # Entsperre
             self.locker.unlock()
             self.is_locked = False
+            self.minimized_by_lock = False
             self.lock_label.config(text="🔒")
             self.status_label.config(text="Bereit zum Sperren", fg='#333')
             self.lock_button.config(
@@ -233,6 +239,8 @@ class LockApp:
                 fg='#000000',
                 activeforeground='#000000'
             )
+            # Fenster in Vordergrund bringen nach manuellem Entsperren
+            self.bring_to_front()
             
     def check_accessibility(self):
         """Prüft ob Bedienungshilfen-Berechtigung vorhanden ist"""
@@ -268,6 +276,20 @@ class LockApp:
                 'x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility'
             ])
             
+    def on_focus_in(self, event):
+        """Wird aufgerufen wenn das Fenster Fokus erhält (z.B. durch Dock-Icon-Klick)"""
+        if self.minimized_by_lock:
+            self.bring_to_front()
+
+    def bring_to_front(self):
+        """Bringt das Fenster in den Vordergrund"""
+        self.root.deiconify()
+        self.root.lift()
+        self.root.focus_force()
+        # Temporär topmost für bessere Sichtbarkeit
+        self.root.attributes('-topmost', True)
+        self.root.after(100, lambda: self.root.attributes('-topmost', False))
+
     def on_closing(self):
         """Wird beim Schließen des Fensters aufgerufen"""
         if self.is_locked:
@@ -285,6 +307,7 @@ class LockApp:
     def update_gui_after_unlock(self):
         """Updated die GUI nach dem Entsperren mit X+C"""
         self.is_locked = False
+        self.minimized_by_lock = False
         self.lock_label.config(text="🔒")
         self.status_label.config(text="Bereit zum Sperren", fg='#333')
         self.lock_button.config(
@@ -294,9 +317,8 @@ class LockApp:
             fg='#000000',
             activeforeground='#000000'
         )
-        # Fenster wieder anzeigen
-        self.root.deiconify()
-        self.root.lift()
+        # Fenster wieder anzeigen mit verbesserter Vordergrund-Bringung
+        self.bring_to_front()
 
     def check_close_flag(self):
         """Wird nicht mehr verwendet"""
