@@ -2,7 +2,7 @@
 
 A security utility for macOS that temporarily locks keyboard and mouse input to prevent unauthorized access or accidental input.
 
-![macOS Lock Screenshot](Screenshot.png)
+![macOS Lock Screenshot](screenshot.png)
 
 ## Features
 
