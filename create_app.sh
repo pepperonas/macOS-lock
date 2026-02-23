@@ -23,15 +23,15 @@ cat > "$CONTENTS_DIR/Info.plist" << 'EOF'
     <key>CFBundleExecutable</key>
     <string>macOS Lock</string>
     <key>CFBundleIdentifier</key>
-    <string>com.yourcompany.macoslock</string>
+    <string>com.pepperonas.macoslock</string>
     <key>CFBundleName</key>
     <string>macOS Lock</string>
     <key>CFBundleDisplayName</key>
     <string>macOS Lock</string>
     <key>CFBundleVersion</key>
-    <string>1.0.0</string>
+    <string>1.1.0</string>
     <key>CFBundleShortVersionString</key>
-    <string>1.0.0</string>
+    <string>1.1.0</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>NSHighResolutionCapable</key>
@@ -43,40 +43,42 @@ cat > "$CONTENTS_DIR/Info.plist" << 'EOF'
 EOF
 
 # Kopiere Python-Scripts und Icon
-cp macos-lock-app.py "$RESOURCES_DIR/"
+cp macos-lock-gui.py "$RESOURCES_DIR/"
 cp macos-lock.py "$RESOURCES_DIR/"
 cp macos-lock.png "$RESOURCES_DIR/"
 
 # Erstelle Launcher-Script
-cat > "$MACOS_DIR/macOS Lock" << 'EOF'
+cat > "$MACOS_DIR/macOS Lock" << 'LAUNCHER'
 #!/bin/bash
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 RESOURCES_DIR="$DIR/../Resources"
 cd "$RESOURCES_DIR"
 
-# Verwende das Python aus dem Virtual Environment
-PYTHON_VENV="/Users/martin/PycharmProjects/SNDBX/.venv/bin/python3"
+# Suche Python mit PyQt6 und Quartz
+PYTHON=""
 
-# Falls venv nicht verfügbar, versuche System-Python mit PyObjC zu installieren
-if [ ! -f "$PYTHON_VENV" ]; then
-    # Installiere PyObjC für System-Python
-    /usr/bin/pip3 install --user pyobjc-core pyobjc-framework-Quartz 2>/dev/null
-    PYTHON_VENV="/usr/bin/python3"
+for CANDIDATE in \
+    "/Users/martin/PycharmProjects/SNDBX/.venv/bin/python3" \
+    "/opt/homebrew/bin/python3" \
+    "/usr/local/bin/python3" \
+    "/usr/bin/python3"; do
+    if [ -f "$CANDIDATE" ]; then
+        if "$CANDIDATE" -c "import Quartz; import PyQt6" 2>/dev/null; then
+            PYTHON="$CANDIDATE"
+            break
+        fi
+    fi
+done
+
+if [ -z "$PYTHON" ]; then
+    osascript -e 'display alert "Abhaengigkeiten fehlen" message "Bitte installiere:\npip3 install PyQt6 pyobjc-framework-Quartz" buttons {"OK"} default button "OK"'
+    exit 1
 fi
 
-# Prüfe ob pyobjc verfügbar ist
-$PYTHON_VENV -c "import Quartz" 2>/dev/null
-if [ $? -ne 0 ]; then
-    osascript -e 'display alert "PyObjC Installation" message "Installiere PyObjC..." buttons {"OK"}'
-    /usr/bin/pip3 install --user pyobjc-core pyobjc-framework-Quartz
-    PYTHON_VENV="/usr/bin/python3"
-fi
+exec "$PYTHON" macos-lock-gui.py
+LAUNCHER
 
-# Starte die GUI-App direkt
-exec $PYTHON_VENV macos-lock-app.py
-EOF
-
-# Mache Launcher ausführbar
+# Mache Launcher ausfuehrbar
 chmod +x "$MACOS_DIR/macOS Lock"
 
 echo "App '$APP_DIR' wurde erstellt!"

@@ -14,12 +14,12 @@ OPTIONS = {
     'plist': {
         'CFBundleName': 'macOS Lock',
         'CFBundleDisplayName': 'macOS Lock',
-        'CFBundleIdentifier': 'com.yourcompany.macoslock',
-        'CFBundleVersion': '1.0.0',
-        'CFBundleShortVersionString': '1.0.0',
+        'CFBundleIdentifier': 'com.pepperonas.macoslock',
+        'CFBundleVersion': '1.1.0',
+        'CFBundleShortVersionString': '1.1.0',
         'NSHighResolutionCapable': True,
     },
-    'includes': ['Quartz'],
+    'includes': ['Quartz', 'PyQt6'],
 }
 
 setup(

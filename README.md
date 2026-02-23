@@ -1,117 +1,116 @@
 # macOS Lock
 
+[![Tests](https://github.com/pepperonas/macOS-lock/actions/workflows/tests.yml/badge.svg)](https://github.com/pepperonas/macOS-lock/actions/workflows/tests.yml)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
+[![Platform](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://www.apple.com/macos/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
 A security utility for macOS that temporarily locks keyboard and mouse input to prevent unauthorized access or accidental input.
 
 ![macOS Lock Screenshot](screenshot.png)
 
 ## Features
 
-- 🔒 **Input Locking**: Blocks all keyboard and mouse input when activated
-- 🎯 **Quick Unlock**: Press `X + C` keys simultaneously to unlock
-- 🖥️ **GUI Interface**: User-friendly graphical interface with lock/unlock button
-- 🚀 **Lightweight**: Minimal resource usage
-- 🔐 **Secure**: Uses macOS native security APIs
+- **Input Locking** - Blocks all keyboard and mouse input when activated
+- **Configurable Unlock Shortcut** - Set your own key combination to unlock (default: `X + C`)
+- **Silent Unlock** - Unlocking via shortcut keeps the app minimized in the dock
+- **Settings Dialog** - Change the unlock shortcut directly in the app
+- **GUI & CLI** - Graphical interface or command-line usage
+- **Lightweight** - Minimal resource usage, uses macOS native Quartz Event Services
 
 ## Installation
 
-### Option 1: Download Pre-built App (Recommended)
+### Download Pre-built App
 
-Download the latest release for Apple Silicon (M1/M2/M3) from the [Releases page](https://github.com/pepperonas/macOS-lock/releases).
+Download the latest release for Apple Silicon / Intel from the [Releases page](https://github.com/pepperonas/macOS-lock/releases).
 
 1. Download `macOS-Lock.app.tar.gz`
 2. Extract the archive
 3. Move `macOS-Lock.app` to your Applications folder
 4. Right-click and select "Open" the first time to bypass Gatekeeper
 
-### Option 2: Build from Source
+### Build from Source
 
-#### Prerequisites
+**Prerequisites:** macOS 10.14+, Python 3.10+
 
-- macOS 10.14 or later
-- Python 3.8+
-- Accessibility permissions for Terminal/Python
-
-#### Quick Start
-
-1. Clone the repository:
 ```bash
 git clone https://github.com/pepperonas/macOS-lock.git
 cd macOS-lock
+pip3 install PyQt6 pyobjc-core pyobjc-framework-Cocoa pyobjc-framework-Quartz
 ```
 
-2. Install dependencies:
-```bash
-pip3 install pyobjc-core pyobjc-framework-Cocoa pyobjc-framework-Quartz
-```
-
-3. Grant accessibility permissions:
-   - Open System Preferences → Security & Privacy → Privacy → Accessibility
-   - Add Terminal or your Python interpreter
-   - Enable the checkbox
+Grant accessibility permissions: System Settings > Privacy & Security > Accessibility > add Terminal/Python.
 
 ## Usage
 
 ### GUI Version (Recommended)
 
-Run the GUI application:
 ```bash
 python3 macos-lock-gui.py
 ```
 
-- Click "SPERREN" (Lock) to activate input lock
-- Press `X + C` keys simultaneously to unlock
-- The window minimizes when locked
+- Click **SPERREN** to lock input
+- Press your configured shortcut (default `X + C`) to unlock silently
+- Click the settings link to change the unlock shortcut
 
-### Command Line Version
+### CLI Version
 
-For a minimal command-line version:
 ```bash
 python3 macos-lock.py
 ```
 
-- Immediately locks input on start
-- Press `X + C` to unlock and exit
+Locks input immediately. Press the configured shortcut to unlock and exit.
 
-### Creating a macOS App
+### Creating a macOS App Bundle
 
-To create a standalone .app bundle:
 ```bash
 ./create_app.sh
 ```
 
-The app will be created in the `dist/` folder.
+The app will be created in the current directory.
+
+## Configuration
+
+The unlock shortcut is stored in `~/.macos-lock-config.json`:
+
+```json
+{
+  "unlock_keys": ["x", "c"]
+}
+```
+
+Change it via the GUI settings dialog or edit the file directly. Supported keys: all letters (`a`-`z`), digits (`0`-`9`), and special keys (`space`, `return`, `tab`, `escape`, `delete`).
 
 ## How It Works
 
-The utility uses macOS's Quartz Event Services to intercept and block input events at the system level. When locked:
+The utility uses macOS Quartz Event Services to intercept and block input events at the system level:
 
-1. All keyboard and mouse events are intercepted
-2. Only the unlock combination (`X + C`) is monitored
+1. All keyboard and mouse events are intercepted via an Event Tap
+2. Only the configured unlock key combination is monitored
 3. Other applications continue running normally
-4. Upon unlock, normal input is restored
+4. Upon unlock, normal input is restored and the app stays minimized
 
-## Security Note
+## Running Tests
 
-This tool requires accessibility permissions to function. It intercepts system events for security purposes only and does not log or transmit any data.
+```bash
+pip install pytest
+python -m pytest tests/ -v
+```
 
 ## Troubleshooting
 
-### "Event Tap could not be created"
+**"Event Tap could not be created"**
 - Ensure accessibility permissions are granted
 - Restart Terminal/Python after granting permissions
 
-### App doesn't respond
+**App doesn't respond**
 - Force quit using Activity Monitor
 - Or use SSH/remote access to kill the process
 
 ## License
 
-MIT License - See LICENSE file for details
+MIT License
 
 ## Author
 
-Created by pepperonas
-
-## Contributing
-
-Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
+Created by [pepperonas](https://github.com/pepperonas)

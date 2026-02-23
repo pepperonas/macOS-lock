@@ -69,7 +69,9 @@ venv.bak/
 # Project specific
 tmp/
 *.log
+*.tar.gz
 .claude/
+.serena/
 
 # macOS
 .DS_Store

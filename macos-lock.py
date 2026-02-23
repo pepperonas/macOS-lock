@@ -1,131 +1,132 @@
 #!/usr/bin/env python3
 """
-macOS Tastatur und Touchpad Sperre
-Sperrt alle Eingaben bis die Tastenkombination "xy" gedrückt wird
+macOS Tastatur und Touchpad Sperre (CLI)
+Sperrt alle Eingaben bis die konfigurierte Tastenkombination gedrueckt wird.
 """
 
 import Quartz
-import time
 import threading
-import subprocess
+import json
 import sys
 import os
 
+CONFIG_PATH = os.path.expanduser("~/.macos-lock-config.json")
+
+KEYCODE_MAP = {
+    "a": 0, "s": 1, "d": 2, "f": 3, "h": 4, "g": 5, "z": 6, "x": 7,
+    "c": 8, "v": 9, "b": 11, "q": 12, "w": 13, "e": 14, "r": 15,
+    "y": 16, "t": 17, "1": 18, "2": 19, "3": 20, "4": 21, "6": 22,
+    "5": 23, "=": 24, "9": 25, "7": 26, "-": 27, "8": 28, "0": 29,
+    "]": 30, "o": 31, "u": 32, "[": 33, "i": 34, "p": 35, "l": 37,
+    "j": 38, "'": 39, "k": 40, ";": 41, "\\": 42, ",": 43, "/": 44,
+    "n": 45, "m": 46, ".": 47, "`": 50, "space": 49, "return": 36,
+    "tab": 48, "escape": 53, "delete": 51,
+}
+
+
+def load_config():
+    default = {"unlock_keys": ["x", "c"]}
+    if os.path.exists(CONFIG_PATH):
+        try:
+            with open(CONFIG_PATH, "r") as f:
+                saved = json.load(f)
+            default.update(saved)
+        except (json.JSONDecodeError, IOError):
+            pass
+    return default
+
 
 class InputLocker:
-	def __init__(self):
-		self.locked = True
-		self.x_pressed = False
-		self.c_pressed = False
-		self.unlock_thread = None
+    def __init__(self, unlock_keycodes):
+        self.locked = True
+        self.pressed_keys = set()
+        self.unlock_keycodes = set(unlock_keycodes)
+        self.unlock_thread = None
 
-	def event_callback(self, proxy, event_type, event, refcon):
-		"""Fängt alle Tastatur- und Maus-Events ab"""
+    def event_callback(self, proxy, event_type, event, refcon):
+        if not self.locked:
+            return event
 
-		# Wenn entsperrt, alle Events durchlassen
-		if not self.locked:
-			return event
+        if event_type in [Quartz.kCGEventKeyDown, Quartz.kCGEventKeyUp]:
+            keycode = Quartz.CGEventGetIntegerValueField(
+                event, Quartz.kCGKeyboardEventKeycode
+            )
 
-		# Tastendruck-Events prüfen
-		if event_type in [Quartz.kCGEventKeyDown, Quartz.kCGEventKeyUp]:
-			keycode = Quartz.CGEventGetIntegerValueField(
-				event, Quartz.kCGKeyboardEventKeycode
-			)
+            if event_type == Quartz.kCGEventKeyDown:
+                self.pressed_keys.add(keycode)
+            elif event_type == Quartz.kCGEventKeyUp:
+                self.pressed_keys.discard(keycode)
 
-			# Keycodes: X=7, C=8
-			if event_type == Quartz.kCGEventKeyDown:
-				if keycode == 7:  # X
-					self.x_pressed = True
-				elif keycode == 8:  # C
-					self.c_pressed = True
+            if self.unlock_keycodes.issubset(self.pressed_keys):
+                self.locked = False
+                if not self.unlock_thread:
+                    self.unlock_thread = threading.Timer(0.2, self.stop_app)
+                    self.unlock_thread.start()
+                return event
 
-			elif event_type == Quartz.kCGEventKeyUp:
-				if keycode == 7:  # X
-					self.x_pressed = False
-				elif keycode == 8:  # C
-					self.c_pressed = False
-			
-			# Entsperren wenn beide Tasten gedrückt
-			if self.x_pressed and self.c_pressed:
-				self.locked = False
-				# Beende nach kurzer Verzögerung - GUI wartet auf uns
-				if not self.unlock_thread:
-					self.unlock_thread = threading.Timer(0.2, self.stop_app)
-					self.unlock_thread.start()
-				return event
+        return None
 
-		# Alle Events blockieren wenn gesperrt
-		return None
+    def stop_app(self):
+        Quartz.CFRunLoopStop(Quartz.CFRunLoopGetCurrent())
 
-	def stop_app(self):
-		"""Beendet die Anwendung"""
-		Quartz.CFRunLoopStop(Quartz.CFRunLoopGetCurrent())
+    def run(self):
+        event_mask = (
+            (1 << Quartz.kCGEventKeyDown)
+            | (1 << Quartz.kCGEventKeyUp)
+            | (1 << Quartz.kCGEventLeftMouseDown)
+            | (1 << Quartz.kCGEventLeftMouseUp)
+            | (1 << Quartz.kCGEventRightMouseDown)
+            | (1 << Quartz.kCGEventRightMouseUp)
+            | (1 << Quartz.kCGEventMouseMoved)
+            | (1 << Quartz.kCGEventLeftMouseDragged)
+            | (1 << Quartz.kCGEventRightMouseDragged)
+            | (1 << Quartz.kCGEventScrollWheel)
+            | (1 << Quartz.kCGEventOtherMouseDown)
+            | (1 << Quartz.kCGEventOtherMouseUp)
+            | (1 << Quartz.kCGEventOtherMouseDragged)
+            | (1 << Quartz.kCGEventTabletPointer)
+            | (1 << Quartz.kCGEventTabletProximity)
+        )
 
-	def run(self):
-		"""Startet die Event-Überwachung"""
+        tap = Quartz.CGEventTapCreate(
+            Quartz.kCGSessionEventTap,
+            Quartz.kCGHeadInsertEventTap,
+            Quartz.kCGEventTapOptionDefault,
+            event_mask,
+            self.event_callback,
+            None,
+        )
 
-		# Event-Maske für alle relevanten Events (Tastatur, Maus und Touchpad)
-		event_mask = (
-				(1 << Quartz.kCGEventKeyDown) |
-				(1 << Quartz.kCGEventKeyUp) |
-				(1 << Quartz.kCGEventLeftMouseDown) |
-				(1 << Quartz.kCGEventLeftMouseUp) |
-				(1 << Quartz.kCGEventRightMouseDown) |
-				(1 << Quartz.kCGEventRightMouseUp) |
-				(1 << Quartz.kCGEventMouseMoved) |
-				(1 << Quartz.kCGEventLeftMouseDragged) |
-				(1 << Quartz.kCGEventRightMouseDragged) |
-				(1 << Quartz.kCGEventScrollWheel) |
-				(1 << Quartz.kCGEventOtherMouseDown) |
-				(1 << Quartz.kCGEventOtherMouseUp) |
-				(1 << Quartz.kCGEventOtherMouseDragged) |
-				(1 << Quartz.kCGEventTabletPointer) |
-				(1 << Quartz.kCGEventTabletProximity)
-		)
+        if not tap:
+            print("Fehler: Konnte Event Tap nicht erstellen!")
+            print("Tipp: Erlaube Terminal/Python in Systemeinstellungen > ")
+            print("   Sicherheit & Datenschutz > Datenschutz > Bedienungshilfen")
+            sys.exit(1)
 
-		# Event Tap erstellen
-		tap = Quartz.CGEventTapCreate(
-			Quartz.kCGSessionEventTap,
-			Quartz.kCGHeadInsertEventTap,
-			Quartz.kCGEventTapOptionDefault,
-			event_mask,
-			self.event_callback,
-			None
-		)
-
-		if not tap:
-			print("❌ Fehler: Konnte Event Tap nicht erstellen!")
-			print("💡 Tipp: Erlaube Terminal/Python in Systemeinstellungen > ")
-			print("   Sicherheit & Datenschutz > Datenschutz > Bedienungshilfen")
-			sys.exit(1)
-
-		# Event Tap zum Run Loop hinzufügen
-		run_loop_source = Quartz.CFMachPortCreateRunLoopSource(
-			Quartz.kCFAllocatorDefault, tap, 0
-		)
-		Quartz.CFRunLoopAddSource(
-			Quartz.CFRunLoopGetCurrent(),
-			run_loop_source,
-			Quartz.kCFRunLoopCommonModes
-		)
-
-		# Event Tap aktivieren
-		Quartz.CGEventTapEnable(tap, True)
-
-		# Run Loop starten
-		Quartz.CFRunLoopRun()
+        run_loop_source = Quartz.CFMachPortCreateRunLoopSource(
+            Quartz.kCFAllocatorDefault, tap, 0
+        )
+        Quartz.CFRunLoopAddSource(
+            Quartz.CFRunLoopGetCurrent(),
+            run_loop_source,
+            Quartz.kCFRunLoopCommonModes,
+        )
+        Quartz.CGEventTapEnable(tap, True)
+        Quartz.CFRunLoopRun()
 
 
 def main():
-	# Locker starten
-	locker = InputLocker()
-	try:
-		locker.run()
-	except KeyboardInterrupt:
-		pass
-	except Exception as e:
-		pass
+    config = load_config()
+    keycodes = [KEYCODE_MAP[k] for k in config["unlock_keys"] if k in KEYCODE_MAP]
+    if not keycodes:
+        keycodes = [7, 8]  # fallback X+C
+
+    locker = InputLocker(keycodes)
+    try:
+        locker.run()
+    except KeyboardInterrupt:
+        pass
 
 
 if __name__ == "__main__":
-	main()
+    main()
