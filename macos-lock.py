@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-macOS Tastatur und Touchpad Sperre (CLI)
-Sperrt alle Eingaben bis die konfigurierte Tastenkombination gedrueckt wird.
+macOS keyboard and trackpad lock (CLI).
+Blocks all input until the configured key combination is pressed.
 """
 
 import Quartz
@@ -98,9 +98,9 @@ class InputLocker:
         )
 
         if not tap:
-            print("Fehler: Konnte Event Tap nicht erstellen!")
-            print("Tipp: Erlaube Terminal/Python in Systemeinstellungen > ")
-            print("   Sicherheit & Datenschutz > Datenschutz > Bedienungshilfen")
+            print("Error: Could not create Event Tap!")
+            print("Tip: Grant Terminal/Python access in System Settings > ")
+            print("   Privacy & Security > Privacy > Accessibility")
             sys.exit(1)
 
         run_loop_source = Quartz.CFMachPortCreateRunLoopSource(

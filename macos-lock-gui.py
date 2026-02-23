@@ -332,7 +332,7 @@ class SettingsDialog(QDialog):
         self.captured_keys = []
         self.capturing = False
 
-        self.setWindowTitle("Einstellungen")
+        self.setWindowTitle("Settings")
         self.setFixedSize(360, 240)
         self.setStyleSheet(DIALOG_STYLE)
 
@@ -340,25 +340,25 @@ class SettingsDialog(QDialog):
         layout.setContentsMargins(24, 20, 24, 20)
         layout.setSpacing(10)
 
-        heading = QLabel("Entsperr-Tastenkombination")
+        heading = QLabel("Unlock Shortcut")
         heading.setObjectName("heading")
         heading.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(heading)
 
         current_display = " + ".join(k.upper() for k in current_keys)
-        info = QLabel(f"Aktuell: {current_display}")
+        info = QLabel(f"Current: {current_display}")
         info.setObjectName("info")
         info.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(info)
 
-        self.capture_label = QLabel("Klicke hier, dann Tasten druecken")
+        self.capture_label = QLabel("Click here, then press keys")
         self.capture_label.setObjectName("capture_area")
         self.capture_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.capture_label.setCursor(Qt.CursorShape.PointingHandCursor)
         self.capture_label.mousePressEvent = self._start_capture
         layout.addWidget(self.capture_label)
 
-        hint = QLabel("Mindestens 2 Tasten gleichzeitig druecken")
+        hint = QLabel("Press at least 2 keys simultaneously")
         hint.setObjectName("hint")
         hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(hint)
@@ -368,12 +368,12 @@ class SettingsDialog(QDialog):
         btn_row = QHBoxLayout()
         btn_row.setSpacing(8)
 
-        cancel_btn = QPushButton("Abbrechen")
+        cancel_btn = QPushButton("Cancel")
         cancel_btn.setObjectName("cancel")
         cancel_btn.clicked.connect(self.reject)
         btn_row.addWidget(cancel_btn)
 
-        self.save_btn = QPushButton("Speichern")
+        self.save_btn = QPushButton("Save")
         self.save_btn.setObjectName("save")
         self.save_btn.clicked.connect(self._save)
         btn_row.addWidget(self.save_btn)
@@ -383,7 +383,7 @@ class SettingsDialog(QDialog):
     def _start_capture(self, event=None):
         self.capturing = True
         self.captured_keys = []
-        self.capture_label.setText("Tasten druecken ...")
+        self.capture_label.setText("Press keys ...")
         self.capture_label.setObjectName("capture_active")
         self.capture_label.setStyleSheet(DIALOG_STYLE)
         self.setFocus()
@@ -425,7 +425,7 @@ class SettingsDialog(QDialog):
             self.accept()
         else:
             QMessageBox.warning(
-                self, "Hinweis", "Bitte mindestens 2 Tasten gleichzeitig druecken."
+                self, "Note", "Please press at least 2 keys simultaneously."
             )
 
 
@@ -486,7 +486,7 @@ class LockWindow(QMainWindow):
         titlebar.addWidget(title_label)
         titlebar.addStretch()
 
-        self.status_label = QLabel("Bereit")
+        self.status_label = QLabel("Ready")
         self.status_label.setObjectName("status")
         titlebar.addWidget(self.status_label)
 
@@ -504,14 +504,14 @@ class LockWindow(QMainWindow):
         shortcut_display = " + ".join(
             k.upper() for k in self.config["unlock_keys"]
         )
-        self.shortcut_label = QLabel(f"Entsperren:  {shortcut_display}")
+        self.shortcut_label = QLabel(f"Unlock:  {shortcut_display}")
         self.shortcut_label.setObjectName("shortcut_info")
         self.shortcut_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         root.addWidget(self.shortcut_label)
         root.addSpacing(16)
 
         # -- lock / unlock button --
-        self.lock_btn = QPushButton("SPERREN")
+        self.lock_btn = QPushButton("LOCK")
         self.lock_btn.setObjectName("lock")
         self.lock_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.lock_btn.clicked.connect(self._toggle_lock)
@@ -519,7 +519,7 @@ class LockWindow(QMainWindow):
         root.addSpacing(10)
 
         # -- settings button --
-        self.settings_btn = QPushButton("\u2699  Tastenkombination aendern")
+        self.settings_btn = QPushButton("\u2699  Change shortcut")
         self.settings_btn.setObjectName("settings")
         self.settings_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.settings_btn.clicked.connect(self._open_settings)
@@ -560,9 +560,9 @@ class LockWindow(QMainWindow):
             if self.locker.lock():
                 self.is_locked = True
                 self.icon_label.setText("\U0001f513")
-                self.status_label.setText("Gesperrt")
+                self.status_label.setText("Locked")
                 self.status_label.setStyleSheet("color: #ff3b30;")
-                self.lock_btn.setText("ENTSPERREN")
+                self.lock_btn.setText("UNLOCK")
                 self.lock_btn.setObjectName("unlock")
                 self.lock_btn.setStyleSheet(STYLESHEET)
                 self.settings_btn.setEnabled(False)
@@ -581,9 +581,9 @@ class LockWindow(QMainWindow):
     def _reset_ui(self):
         self.is_locked = False
         self.icon_label.setText("\U0001f512")
-        self.status_label.setText("Bereit")
+        self.status_label.setText("Ready")
         self.status_label.setStyleSheet("color: #8a8a8e;")
-        self.lock_btn.setText("SPERREN")
+        self.lock_btn.setText("LOCK")
         self.lock_btn.setObjectName("lock")
         self.lock_btn.setStyleSheet(STYLESHEET)
         self.settings_btn.setEnabled(True)
@@ -599,7 +599,7 @@ class LockWindow(QMainWindow):
         save_config(self.config)
         self.locker.set_unlock_keycodes(keys_to_keycodes(new_keys))
         display = " + ".join(k.upper() for k in new_keys)
-        self.shortcut_label.setText(f"Entsperren:  {display}")
+        self.shortcut_label.setText(f"Unlock:  {display}")
 
     # ---- accessibility check ----------------------------------------------
     @staticmethod
@@ -621,9 +621,9 @@ class LockWindow(QMainWindow):
     def _show_accessibility_dialog():
         reply = QMessageBox.question(
             None,
-            "Berechtigung erforderlich",
-            "Diese App benoetigt Zugriff auf die Bedienungshilfen.\n\n"
-            "Systemeinstellungen oeffnen?",
+            "Permission Required",
+            "This app requires Accessibility permissions.\n\n"
+            "Open System Settings?",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
         )
         if reply == QMessageBox.StandardButton.Yes:
