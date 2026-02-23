@@ -9,7 +9,7 @@
 
 A security utility for macOS that temporarily locks all keyboard and mouse input to prevent unauthorized access or accidental input. Built with PyQt6 and a modern dark UI.
 
-![macOS Lock Screenshot](screenshot.png)
+![macOS Lock Screenshot](screenshot.png?raw=true)
 
 ---
 
